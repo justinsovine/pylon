@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Activity - Pylon{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-semibold mb-6">Activity</h1>
+    <div id="activity-feed" hx-get="/partials/activity" hx-trigger="load, every 30s" hx-swap="innerHTML">
+        <p class="text-gray-500">Loading activity...</p>
+    </div>
+</div>
+{% endblock %}

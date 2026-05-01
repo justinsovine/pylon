@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Pylon{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.17/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+    <nav class="border-b border-gray-800 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-6">
+            <a href="/" class="text-lg font-semibold text-white">Pylon</a>
+            <a href="/" class="text-sm text-gray-400 hover:text-white">Board</a>
+            <a href="/activity" class="text-sm text-gray-400 hover:text-white">Activity</a>
+        </div>
+        <div class="flex items-center gap-4">
+            <span hx-get="/partials/badge" hx-trigger="every 30s" hx-swap="innerHTML"
+                  class="text-sm text-amber-400" id="badge">
+            </span>
+        </div>
+    </nav>
+    <main class="p-6">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

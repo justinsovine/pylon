@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Board - Pylon{% endblock %}
+{% block content %}
+<div class="flex gap-4 overflow-x-auto" hx-get="/partials/board" hx-trigger="every 10s" hx-swap="innerHTML">
+    <p class="text-gray-500">Loading board...</p>
+</div>
+{% endblock %}
