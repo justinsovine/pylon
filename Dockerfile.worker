@@ -1,0 +1,56 @@
+# =============================================================================
+# Pylon worker image
+#
+# Extended from the base image with:
+# - Playwright + Chromium for browser testing
+# - Docker CLI for exec-ing into app containers (phpstan, artisan)
+# - mkcert CA certificates so Playwright trusts *.test domains
+# =============================================================================
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# System tools + Docker CLI
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ripgrep \
+    universal-ctags \
+    php-cli \
+    php-xml \
+    php-mbstring \
+    php-curl \
+    unzip \
+    ca-certificates \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Docker CLI (for docker exec into app containers)
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends docker-ce-cli \
+    && rm -rf /var/lib/apt/lists/*
+
+# Composer + phpstan
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+RUN composer global require phpstan/phpstan --no-interaction --no-progress \
+    && ln -s /root/.composer/vendor/bin/phpstan /usr/local/bin/phpstan
+
+# uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Python deps
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --frozen --no-dev
+
+# Playwright + Chromium
+RUN uv pip install playwright \
+    && uv run playwright install chromium --with-deps
+
+COPY . .
+
+CMD ["celery", "-A", "src.pylon.tasks.celery_app", "worker", "--loglevel=info", "--concurrency=3"]

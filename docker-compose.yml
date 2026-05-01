@@ -1,3 +1,13 @@
+# =============================================================================
+# Pylon local development stack
+#
+# Joins the shared edoc Docker network so workers can reach the Laravel app
+# containers (onboard-app, esign-app, scriptus-app) and their Mailpit inboxes
+# for live pre-investigation and browser testing.
+#
+# Requires: docker network create edoc (same network as local-proxy)
+# =============================================================================
+
 services:
   db:
     image: postgres:16
@@ -9,6 +19,8 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pylon"]
       interval: 5s
@@ -19,6 +31,8 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    networks:
+      - internal
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -35,7 +49,11 @@ services:
     volumes:
       - .:/app
       - worktrees:/app/worktrees
+      - repos:/repos:ro
     env_file: .env
+    networks:
+      - internal
+      - edoc
     depends_on:
       db:
         condition: service_healthy
@@ -45,12 +63,17 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.worker
     command: celery -A src.pylon.tasks.celery_app worker --loglevel=info --concurrency=3
     volumes:
       - .:/app
       - worktrees:/app/worktrees
+      - repos:/repos:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
+    networks:
+      - internal
+      - edoc
     depends_on:
       db:
         condition: service_healthy
@@ -65,6 +88,8 @@ services:
     volumes:
       - .:/app
     env_file: .env
+    networks:
+      - internal
     depends_on:
       redis:
         condition: service_healthy
@@ -77,6 +102,8 @@ services:
     ports:
       - "5555:5555"
     env_file: .env
+    networks:
+      - internal
     depends_on:
       redis:
         condition: service_healthy
@@ -84,3 +111,14 @@ services:
 volumes:
   pgdata:
   worktrees:
+  repos:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${REPOS_BASE_PATH:-/home/jsovine/code/edoc}
+
+networks:
+  internal:
+  edoc:
+    external: true
