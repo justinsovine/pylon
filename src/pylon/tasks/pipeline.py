@@ -9,6 +9,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 
 from ..config import settings
 from ..harness.ipc import read_result, read_round_file, write_answers_file, write_config
+from ..harness.preinvestigate import run_pre_investigation
 from ..harness.worker import kill_worker, spawn_worker
 from .celery_app import app
 
@@ -45,6 +46,17 @@ async def _run_phase(
     pylon_dir.mkdir(parents=True, exist_ok=True)
 
     write_config(pylon_dir, pipeline_id, phase)
+
+    # Pre-investigation: run zero-token static analysis before Claude sees the code
+    if phase == "investigate":
+        repo_path = _resolve_repo_path(pipeline_id)
+        if repo_path:
+            keywords = _extract_keywords(notes_path)
+            await run_pre_investigation(
+                repo_path=repo_path,
+                notes_path=str(notes_path),
+                keywords=keywords,
+            )
 
     if round_answers:
         round_num = round_answers.get("round", 1)
@@ -108,3 +120,23 @@ def overnight_batch():
 def notify_batch_complete(results):
     # TODO: send Slack notification summarizing completed investigations
     pass
+
+
+def _resolve_repo_path(pipeline_id: str) -> str | None:
+    """Look up the repo path for a pipeline. Returns None if not determinable."""
+    # TODO: query DB for pipeline -> ticket -> repo, resolve to filesystem path
+    # e.g. settings.repos_base_path / ticket.repo
+    return None
+
+
+def _extract_keywords(notes_path: Path) -> list[str]:
+    """Pull keywords from ticket context for targeted ripgrep search."""
+    config_file = notes_path / ".pylon" / "config.json"
+    if not config_file.exists():
+        return []
+    import json
+    config = json.loads(config_file.read_text())
+    context = config.get("context", "")
+    # Split context into meaningful search terms
+    words = [w for w in context.split() if len(w) > 4 and w.isalpha()]
+    return words[:10]

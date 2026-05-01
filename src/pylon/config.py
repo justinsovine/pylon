@@ -18,6 +18,14 @@ class Settings(BaseSettings):
     notes_base_path: str = ""
     worktrees_path: str = "worktrees"
 
+    repo_paths: dict[str, str] = {
+        "esign": "esign",
+        "onboard": "onboard",
+        "scriptus-web": "scriptus-web",
+    }
+
+    skip_phpstan: bool = False
+
     phase_timeouts: dict[str, int] = {
         "investigate": 1200,
         "refine": 600,
