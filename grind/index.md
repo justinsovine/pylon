@@ -13,10 +13,9 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 - D4: Integration test mock -- Option A, fake subprocess emitting IPC files
 
 ## In Progress
-<!-- next writes the current workorder here -->
+- [wo-001](workorders/wo-001-board-partial.md) | blocked_by: none | est: medium
 
 ## Up Next
-- [wo-001](workorders/wo-001-board-partial.md) | blocked_by: none | est: medium
 - [wo-002](workorders/wo-002-decision-partial.md) | blocked_by: wo-001 | est: medium
 - [wo-003](workorders/wo-003-badge-ticket-detail.md) | blocked_by: wo-001 | est: small
 - [wo-004](workorders/wo-004-activity-feed.md) | blocked_by: wo-001 | est: small

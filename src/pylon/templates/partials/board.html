@@ -1,0 +1,30 @@
+{% for col in columns %}
+<div class="flex-shrink-0 w-64 bg-gray-900 rounded-lg p-3">
+    <h3 class="text-sm font-medium text-gray-400 mb-3">{{ col.name }} ({{ col.pipelines|length }})</h3>
+    {% for p in col.pipelines %}
+    <a href="/tickets/{{ p.ticket.slug }}"
+       class="block bg-gray-800 rounded p-3 mb-2 hover:bg-gray-750 border border-gray-700
+              {% if p.status == 'failed' %}border-red-500{% endif %}">
+        <div class="font-medium text-sm text-white">{{ p.ticket.slug }}</div>
+        <div class="flex items-center gap-2 mt-1">
+            <span class="text-xs px-1.5 py-0.5 rounded bg-gray-700 text-gray-300">{{ p.ticket.repo }}</span>
+            {% if p.ticket.assignee %}
+            <span class="text-xs text-gray-500">@{{ p.ticket.assignee }}</span>
+            {% endif %}
+        </div>
+        {% if p.status == 'awaiting_decisions' %}
+        <a href="/tickets/{{ p.ticket.slug }}/decisions"
+           class="mt-2 inline-block text-xs text-amber-400 hover:text-amber-300">Answer decisions</a>
+        {% elif p.pr_url %}
+        <a href="{{ p.pr_url }}" target="_blank"
+           class="mt-2 inline-block text-xs text-blue-400 hover:text-blue-300">View PR</a>
+        {% elif p.current_phase %}
+        <div class="mt-1 text-xs text-gray-500">{{ p.current_phase }}</div>
+        {% endif %}
+    </a>
+    {% endfor %}
+    {% if not col.pipelines %}
+    <p class="text-xs text-gray-600 italic">Empty</p>
+    {% endif %}
+</div>
+{% endfor %}
