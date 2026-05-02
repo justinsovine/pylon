@@ -66,7 +66,55 @@ tests/
   test_tasks/          # (empty, needs Celery task tests)
 ```
 
-## Dev commands
+## Docker (primary dev environment)
+
+All dev work runs through Docker Compose. No local venv or `just` needed.
+
+```bash
+docker compose up -d          # Start full stack
+docker compose down           # Stop
+docker compose build --no-cache api  # Rebuild after Dockerfile changes
+docker compose logs -f api    # Tail logs
+```
+
+### Services
+
+| Service | Port | Notes |
+|---------|------|-------|
+| api     | 8001 | FastAPI + uvicorn with reload, mounts `.:/app` |
+| worker  | --   | Celery worker (concurrency=3) |
+| beat    | --   | Celery beat scheduler |
+| flower  | 5555 | Celery monitoring |
+| db      | 5433 | PostgreSQL 16 |
+| redis   | 6380 | Broker + result backend |
+
+### Running tests
+
+```bash
+docker compose exec -e TEST_DATABASE_URL="postgresql+asyncpg://pylon:pylon@db:5432/pylon_test" api python -m pytest tests/
+docker compose exec -e TEST_DATABASE_URL="postgresql+asyncpg://pylon:pylon@db:5432/pylon_test" api python -m pytest tests/ -x -q  # stop on first failure
+docker compose exec -e TEST_DATABASE_URL="postgresql+asyncpg://pylon:pylon@db:5432/pylon_test" api python -m pytest tests/test_api/ -k "decisions"  # filter
+```
+
+The test DB (`pylon_test`) must exist: `docker compose exec db psql -U pylon -c "CREATE DATABASE pylon_test;"`
+
+### Running migrations
+
+```bash
+docker compose exec api alembic upgrade head
+docker compose exec api alembic revision --autogenerate -m "description"
+docker compose exec api alembic downgrade -1
+```
+
+### Key Docker details
+
+- Dockerfiles install ALL deps (`uv sync --frozen --all-extras`) including test/dev tools
+- `.:/app` volume mount means source changes reflect immediately (uvicorn reload)
+- DB host inside containers is `db`, not `localhost`
+- Shared `edoc` Docker network connects to Laravel app containers
+- `repos` volume bind-mounts `~/code/edoc` read-only for pre-investigation
+
+## Dev commands (host, requires `just`)
 
 ```bash
 just install          # uv sync --all-extras
@@ -114,6 +162,12 @@ Models, schemas, API endpoints, and most Celery task wiring are complete. Pipeli
 
 ## Testing
 
+Primary method (Docker):
+```bash
+docker compose exec -e TEST_DATABASE_URL="postgresql+asyncpg://pylon:pylon@db:5432/pylon_test" api python -m pytest tests/ -q
+```
+
+Host alternative (requires local venv + just):
 ```bash
 just test                    # all tests
 just test tests/test_api/    # API tests only
@@ -121,6 +175,7 @@ just test -k "tree_sitter"  # specific tests
 ```
 
 Tests use async fixtures with a real test database (not mocks). Test factories in `tests/factories.py`.
+
 
 ## Target repos
 
