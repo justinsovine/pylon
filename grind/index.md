@@ -16,7 +16,6 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 <!-- next writes the current workorder here -->
 
 ## Up Next
-- [wo-002](workorders/wo-002-decision-partial.md) | blocked_by: wo-001 | est: medium
 - [wo-003](workorders/wo-003-badge-ticket-detail.md) | blocked_by: wo-001 | est: small
 - [wo-004](workorders/wo-004-activity-feed.md) | blocked_by: wo-001 | est: small
 - [wo-005](workorders/wo-005-slack-notifications.md) | blocked_by: none | est: small
@@ -29,6 +28,7 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 - [wo-013](workorders/wo-013-jinja2-template-cache-bug.md) | blocked_by: none | est: small
 
 ## Done
+- [wo-002](workorders/done/wo-002-decision-partial.md) | commit: 68c5820 | completed: 2026-05-02
 - [wo-001](workorders/done/wo-001-board-partial.md) | commit: 1f426a6 | completed: 2026-05-02
 
 ## Inbox
