@@ -47,6 +47,47 @@ async def activity(request: Request):
     return templates.TemplateResponse(request, "activity.html")
 
 
+@app.get("/partials/activity", response_class=HTMLResponse)
+async def activity_partial(request: Request, db: AsyncSession = Depends(get_db)):
+    recent_runs = (
+        await db.execute(
+            select(PhaseRun)
+            .join(Pipeline)
+            .join(Ticket)
+            .options(selectinload(PhaseRun.pipeline).selectinload(Pipeline.ticket))
+            .order_by(PhaseRun.created_at.desc())
+            .limit(50)
+        )
+    ).scalars().all()
+
+    events = []
+    for run in recent_runs:
+        slug = run.pipeline.ticket.slug
+        assignee = run.pipeline.ticket.assignee
+        pid = run.pipeline_id
+        if run.started_at:
+            events.append({
+                "ts": run.started_at, "type": "started", "slug": slug,
+                "assignee": assignee, "msg": f"{run.phase} started", "pid": pid,
+            })
+        if run.completed_at and run.status == "completed":
+            events.append({
+                "ts": run.completed_at, "type": "completed", "slug": slug,
+                "assignee": assignee, "msg": f"{run.phase} completed", "pid": pid,
+            })
+        if run.completed_at and run.status == "failed":
+            err = run.error_message or "unknown"
+            events.append({
+                "ts": run.completed_at, "type": "failed", "slug": slug,
+                "assignee": assignee, "msg": f"{run.phase} failed: {err}", "pid": pid,
+            })
+
+    events.sort(key=lambda e: e["ts"], reverse=True)
+    return templates.TemplateResponse(
+        request, "partials/activity.html", {"events": events[:50]},
+    )
+
+
 PHASE_ORDER = ["investigate", "refine", "plan", "critique", "implement", "test", "pr"]
 
 

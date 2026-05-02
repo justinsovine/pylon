@@ -1,0 +1,23 @@
+{% if events %}
+<ul class="space-y-2">
+    {% for e in events %}
+    <li class="flex items-start gap-3 text-sm">
+        <span class="text-gray-500 whitespace-nowrap text-xs mt-0.5">{{ e.ts.strftime('%b %d %H:%M') }}</span>
+        {% if e.type == "completed" %}
+        <span class="inline-block px-1.5 py-0.5 rounded text-xs font-medium bg-green-900 text-green-300">completed</span>
+        {% elif e.type == "failed" %}
+        <span class="inline-block px-1.5 py-0.5 rounded text-xs font-medium bg-red-900 text-red-300">failed</span>
+        {% else %}
+        <span class="inline-block px-1.5 py-0.5 rounded text-xs font-medium bg-gray-700 text-gray-300">started</span>
+        {% endif %}
+        <span>
+            <a href="/tickets/{{ e.slug }}" class="text-blue-400 hover:underline">{{ e.slug }}</a>
+            <span class="text-gray-400">{{ e.msg }}</span>
+            {% if e.assignee %}<span class="text-gray-600 text-xs ml-1">({{ e.assignee }})</span>{% endif %}
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-gray-500 text-sm">No activity yet.</p>
+{% endif %}
