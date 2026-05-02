@@ -24,7 +24,7 @@ This is the spine. Everything else hangs off it.
 - [x] Git worktree creation (`git worktree add`) for isolated branches
 - [x] Branch creation (`git checkout -b pylon/{slug}/{phase}`)
 - [x] Account rotation checking DB for active sessions (not naive round-robin)
-- [ ] Decision file detection triggering internal API call
+- [x] Decision file detection triggering internal API call
 - [ ] Worker monitoring loop (health checks every 30s, kill stuck workers)
 
 ## Database bootstrap

@@ -14,7 +14,7 @@ from ..config import settings
 from ..database import async_session
 from ..harness.ipc import read_result, read_round_file, write_answers_file, write_config
 from ..harness.preinvestigate import run_pre_investigation
-from ..harness.worker import acquire_account, create_worktree, kill_worker, mark_worker_running, release_worker, spawn_worker
+from ..harness.worker import acquire_account, create_worktree, kill_worker, mark_worker_running, release_worker, run_worker_with_monitor, spawn_worker
 from ..models import Pipeline, Ticket
 from .celery_app import app
 
@@ -111,9 +111,15 @@ async def _run_phase(
     await mark_worker_running(session_id, proc.pid)
 
     try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        stdout, stderr, reported_rounds = await run_worker_with_monitor(
+            proc=proc,
+            pylon_dir=pylon_dir,
+            pipeline_id=pipeline_id,
+            phase=phase,
+            notify_fn=_notify_internal,
+            timeout=timeout,
+        )
     except asyncio.TimeoutError:
-        await kill_worker(proc)
         await release_worker(session_id, exit_code=-1, error="timed out")
         return {"status": "timed_out", "phase": phase}
 
@@ -144,14 +150,15 @@ async def _run_phase(
 
     if result.get("status") == "awaiting_decisions":
         round_num = result.get("round", 1)
-        round_file = read_round_file(pylon_dir, round_num)
-        if round_file:
-            await _notify_internal("decisions-emitted", {
-                "pipeline_id": pipeline_id,
-                "phase": phase,
-                "round_number": round_num,
-                "decisions": round_file.get("decisions", []),
-            })
+        if round_num not in reported_rounds:
+            round_file = read_round_file(pylon_dir, round_num)
+            if round_file:
+                await _notify_internal("decisions-emitted", {
+                    "pipeline_id": pipeline_id,
+                    "phase": phase,
+                    "round_number": round_num,
+                    "decisions": round_file.get("decisions", []),
+                })
         return {"status": "awaiting_decisions", "round": round_num}
 
     if result.get("status") == "complete":

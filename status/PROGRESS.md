@@ -1,6 +1,6 @@
 # Build Progress
 
-Last updated: 2026-05-01 (DB-backed account rotation in worker harness)
+Last updated: 2026-05-01 (Decision file detection in worker harness)
 
 ## Commits
 
@@ -69,7 +69,7 @@ Not wired:
 - [x] Worktree creation (git worktree add) and branch creation
 - [x] Account rotation checking DB for active sessions
 - [ ] Worker monitoring loop (health checks every 30s)
-- [ ] Decision file detection triggering API call
+- [x] Decision file detection triggering API call
 
 ### Pre-investigation (~80%)
 

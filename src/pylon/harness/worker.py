@@ -9,9 +9,12 @@ from sqlalchemy import select
 
 from ..config import settings
 from ..database import async_session
+from ..harness.ipc import list_round_files, has_answers, read_round_file
 from ..models import WorkerSession
 
 logger = logging.getLogger(__name__)
+
+DECISION_POLL_INTERVAL = 5
 
 
 async def acquire_account(pipeline_id: str, phase: str, timeout: int) -> WorkerSession | None:
@@ -113,6 +116,79 @@ async def spawn_worker(
     )
 
     return proc
+
+
+async def monitor_decisions(
+    pylon_dir: Path,
+    pipeline_id: str,
+    phase: str,
+    proc: asyncio.subprocess.Process,
+    notify_fn,
+) -> list[int]:
+    reported: set[int] = set()
+
+    while proc.returncode is None:
+        for round_num in list_round_files(pylon_dir):
+            if round_num in reported:
+                continue
+            if has_answers(pylon_dir, round_num):
+                continue
+
+            round_data = read_round_file(pylon_dir, round_num)
+            if not round_data:
+                continue
+
+            decisions = round_data.get("decisions", [])
+            if not decisions:
+                continue
+
+            logger.info(
+                "Detected decision round %d for pipeline %s (phase %s, %d decisions)",
+                round_num, pipeline_id, phase, len(decisions),
+            )
+
+            try:
+                await notify_fn("decisions-emitted", {
+                    "pipeline_id": pipeline_id,
+                    "phase": phase,
+                    "round_number": round_num,
+                    "decisions": decisions,
+                })
+            except Exception:
+                logger.warning(
+                    "Failed to notify decisions-emitted for round %d", round_num,
+                    exc_info=True,
+                )
+                continue
+
+            reported.add(round_num)
+
+        await asyncio.sleep(DECISION_POLL_INTERVAL)
+
+    return sorted(reported)
+
+
+async def run_worker_with_monitor(
+    proc: asyncio.subprocess.Process,
+    pylon_dir: Path,
+    pipeline_id: str,
+    phase: str,
+    notify_fn,
+    timeout: int,
+) -> tuple[bytes | None, bytes | None, list[int]]:
+    monitor_task = asyncio.create_task(
+        monitor_decisions(pylon_dir, pipeline_id, phase, proc, notify_fn)
+    )
+
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        await kill_worker(proc)
+        monitor_task.cancel()
+        raise
+
+    reported = await monitor_task
+    return stdout, stderr, reported
 
 
 async def kill_worker(proc: asyncio.subprocess.Process, grace_period: int = 30):
