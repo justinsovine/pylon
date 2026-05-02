@@ -16,7 +16,7 @@ services:
       POSTGRES_USER: pylon
       POSTGRES_PASSWORD: pylon
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
@@ -30,7 +30,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
     networks:
       - internal
     healthcheck:
@@ -45,7 +45,7 @@ services:
       dockerfile: Dockerfile
     command: uvicorn src.pylon.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - .:/app
       - worktrees:/app/worktrees
@@ -53,6 +53,7 @@ services:
     env_file: .env
     environment:
       RUN_MIGRATIONS: "true"
+      PYTHONPATH: /app
     networks:
       - internal
       - edoc
@@ -73,6 +74,8 @@ services:
       - repos:/repos:ro
       - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
+    environment:
+      PYTHONPATH: /app
     networks:
       - internal
       - edoc
@@ -90,6 +93,8 @@ services:
     volumes:
       - .:/app
     env_file: .env
+    environment:
+      PYTHONPATH: /app
     networks:
       - internal
     depends_on:

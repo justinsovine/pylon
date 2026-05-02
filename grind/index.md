@@ -26,6 +26,7 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 - [wo-010](workorders/wo-010-harness-tests.md) | blocked_by: none | est: medium
 - [wo-011](workorders/wo-011-integration-test.md) | blocked_by: wo-008, wo-009, wo-010 | est: large
 - [wo-012](workorders/wo-012-skill-test-protocol.md) | blocked_by: none | est: small
+- [wo-013](workorders/wo-013-jinja2-template-cache-bug.md) | blocked_by: none | est: small
 
 ## Done
 - [wo-001](workorders/done/wo-001-board-partial.md) | commit: 1f426a6 | completed: 2026-05-02
