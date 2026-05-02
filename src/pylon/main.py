@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from .api import decisions, internal, pipelines, workers
 from .database import get_db
 from .models import Decision, DecisionRound, PhaseRun, Pipeline, Ticket
+from .redis import get_progress
 
 app = FastAPI(title="Pylon", version="0.1.0")
 
@@ -20,6 +21,12 @@ static_dir = Path(__file__).parent / "static"
 templates = Jinja2Templates(directory=str(templates_dir))
 templates.env.cache = None
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+@app.get("/api/progress/{pipeline_id}")
+async def get_pipeline_progress(pipeline_id: str):
+    data = await get_progress(pipeline_id)
+    return data or {"phase": None, "progress": 0, "message": ""}
+
 
 app.include_router(pipelines.router, prefix="/api/pipelines", tags=["pipelines"])
 app.include_router(decisions.router, prefix="/api/decisions", tags=["decisions"])

@@ -10,6 +10,7 @@ from ..config import settings
 from ..database import get_db
 from ..notifications import notify_decisions_pending, notify_phase_failed, notify_pipeline_completed
 from ..models import Decision, DecisionRound, PhaseRun, Pipeline
+from ..redis import set_progress
 from ..schemas import DecisionsEmitted, PhaseCompleted, PhaseFailed, PhaseStarted, ProgressUpdate
 from ..tasks.asana import sync_asana_fields
 from ..tasks.pipeline import run_phase
@@ -245,5 +246,9 @@ async def phase_failed(
 
 @router.post("/progress", dependencies=[Depends(verify_internal_key)])
 async def progress_update(body: ProgressUpdate):
-    # TODO: store in Redis for fast dashboard polling (not worth a DB write)
+    await set_progress(str(body.pipeline_id), {
+        "phase": body.phase,
+        "progress": body.progress,
+        "message": body.message,
+    })
     return {"ok": True}
