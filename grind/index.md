@@ -16,7 +16,6 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 <!-- next writes the current workorder here -->
 
 ## Up Next
-- [wo-006](workorders/wo-006-redis-progress.md) | blocked_by: none | est: small
 - [wo-008](workorders/wo-008-internal-api-tests.md) | blocked_by: none | est: medium
 - [wo-009](workorders/wo-009-celery-task-tests.md) | blocked_by: none | est: medium
 - [wo-010](workorders/wo-010-harness-tests.md) | blocked_by: none | est: medium
@@ -24,6 +23,7 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 - [wo-012](workorders/wo-012-skill-test-protocol.md) | blocked_by: none | est: small
 
 ## Done
+- [wo-006](workorders/done/wo-006-redis-progress.md) | commit: 32c44d3 | completed: 2026-05-02
 - [wo-005](workorders/done/wo-005-slack-notifications.md) | commit: 5e3763d | completed: 2026-05-02
 - [wo-004](workorders/done/wo-004-activity-feed.md) | commit: 37e72a3 | completed: 2026-05-02
 - [wo-003](workorders/done/wo-003-badge-ticket-detail.md) | commit: a0cc24c | completed: 2026-05-02
