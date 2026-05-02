@@ -29,10 +29,10 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY pyproject.toml uv.lock* ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --all-extras --no-install-project
 
 COPY . .
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --all-extras
 RUN chmod +x entrypoint.sh
 
 EXPOSE 8000
