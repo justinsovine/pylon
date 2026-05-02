@@ -18,6 +18,7 @@ templates_dir = Path(__file__).parent / "templates"
 static_dir = Path(__file__).parent / "static"
 
 templates = Jinja2Templates(directory=str(templates_dir))
+templates.env.cache = None
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 app.include_router(pipelines.router, prefix="/api/pipelines", tags=["pipelines"])
@@ -28,22 +29,22 @@ app.include_router(internal.router, prefix="/api/internal", tags=["internal"])
 
 @app.get("/", response_class=HTMLResponse)
 async def board(request: Request):
-    return templates.TemplateResponse("board.html", {"request": request})
+    return templates.TemplateResponse(request, "board.html")
 
 
 @app.get("/tickets/{slug}", response_class=HTMLResponse)
 async def ticket_detail(request: Request, slug: str):
-    return templates.TemplateResponse("ticket.html", {"request": request, "slug": slug})
+    return templates.TemplateResponse(request, "ticket.html", {"slug": slug})
 
 
 @app.get("/tickets/{slug}/decisions", response_class=HTMLResponse)
 async def ticket_decisions(request: Request, slug: str):
-    return templates.TemplateResponse("decisions.html", {"request": request, "slug": slug})
+    return templates.TemplateResponse(request, "decisions.html", {"slug": slug})
 
 
 @app.get("/activity", response_class=HTMLResponse)
 async def activity(request: Request):
-    return templates.TemplateResponse("activity.html", {"request": request})
+    return templates.TemplateResponse(request, "activity.html")
 
 
 @app.get("/partials/decisions/{slug}", response_class=HTMLResponse)
@@ -81,9 +82,9 @@ async def decisions_partial(request: Request, slug: str, db: AsyncSession = Depe
             break
 
     return templates.TemplateResponse(
+        request,
         "partials/decisions.html",
         {
-            "request": request,
             "pipeline": pipeline,
             "round": awaiting_round,
             "phase": phase,
@@ -137,9 +138,7 @@ async def board_partial(
         columns.append({"name": name, "pipelines": [p for p in pipelines_list if pred(p)]})
 
     return templates.TemplateResponse(
+        request,
         "partials/board.html",
-        {
-            "request": request,
-            "columns": columns,
-        },
+        {"columns": columns},
     )
