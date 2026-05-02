@@ -1,6 +1,6 @@
 # Build Progress
 
-Last updated: 2026-05-01 (Decision file detection in worker harness)
+Last updated: 2026-05-01 (Worker monitoring + worktree cleanup in maintenance tasks)
 
 ## Commits
 
@@ -54,8 +54,8 @@ Done:
 Not wired:
 - [x] overnight_batch querying queued pipelines and dispatching via chord
 - [x] notify_batch_complete sending Slack webhook summary
-- [ ] Stale worker detection querying DB
-- [ ] Worktree cleanup for old pipelines
+- [x] Stale worker detection querying DB
+- [x] Worktree cleanup for old pipelines
 
 ### Worker harness (~50%)
 
@@ -68,7 +68,7 @@ Done:
 Not wired:
 - [x] Worktree creation (git worktree add) and branch creation
 - [x] Account rotation checking DB for active sessions
-- [ ] Worker monitoring loop (health checks every 30s)
+- [x] Worker monitoring loop (health checks every 30s)
 - [x] Decision file detection triggering API call
 
 ### Pre-investigation (~80%)

@@ -25,7 +25,7 @@ This is the spine. Everything else hangs off it.
 - [x] Branch creation (`git checkout -b pylon/{slug}/{phase}`)
 - [x] Account rotation checking DB for active sessions (not naive round-robin)
 - [x] Decision file detection triggering internal API call
-- [ ] Worker monitoring loop (health checks every 30s, kill stuck workers)
+- [x] Worker monitoring loop (health checks every 30s, kill stuck workers)
 
 ## Database bootstrap
 
