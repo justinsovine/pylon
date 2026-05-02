@@ -10,7 +10,7 @@ Read these first when resuming work:
 - `status/DECISIONS.md` -- decisions already made (don't re-litigate)
 - `status/OPEN-QUESTIONS.md` -- undecided items needing human input
 
-Design docs (top-level .md files): CONCEPT, TECH, TOOLING, DATA-MODEL, DECISION-PROTOCOL, WORKER-LIFECYCLE, ASANA-INTEGRATION, DASHBOARD, API-SURFACE, FEATURE-SKILL-MODS (skill phase design), PRE-INVESTIGATION, BRANDING.
+Design docs in `BUILDPLAN/`: CONCEPT, TECH, TOOLING, DATA-MODEL, DECISION-PROTOCOL, WORKER-LIFECYCLE, ASANA-INTEGRATION, DASHBOARD, API-SURFACE, FEATURE-SKILL-MODS (skill phase design), PRE-INVESTIGATION, BRANDING.
 
 ## Stack
 
@@ -31,6 +31,7 @@ src/pylon/
   database.py          # SQLAlchemy async engine + session factory
   models.py            # 7 ORM models: Ticket, Pipeline, PhaseRun, DecisionRound, Decision, Answer, WorkerSession
   schemas.py           # All Pydantic request/response types
+  seed.py              # Bootstrap seed data (just seed)
   api/
     pipelines.py       # CRUD, filtering by assignee/status/repo
     decisions.py       # Pending decisions query, answer batch submission
@@ -69,6 +70,9 @@ tests/
 
 ```bash
 just install          # uv sync --all-extras
+just install-system-tools  # ripgrep, ctags, php, phpstan
+just db-create        # createdb pylon + pylon_test
+just seed             # bootstrap seed data
 just dev              # uvicorn with reload on :8000
 just worker           # Celery worker (concurrency=3)
 just beat             # Celery beat scheduler
@@ -79,6 +83,7 @@ just lint             # ruff check + pyright
 just fmt              # ruff format + fix
 just migrate          # alembic upgrade head
 just migration "msg"  # alembic autogenerate
+just rollback         # alembic downgrade -1
 just check-tools      # verify system tools installed
 just pre-investigate <repo> <notes> [keywords...]
 ```
@@ -105,7 +110,7 @@ just pre-investigate <repo> <notes> [keywords...]
 
 ## What's wired vs not
 
-Models, schemas, and API endpoint signatures are complete. The gap is wiring: API endpoints don't dispatch Celery tasks yet, Celery tasks don't call internal API on completion, workers don't create git worktrees, and the /pylon skill phase files don't exist. See `status/backlog/critical-path.md` for the full list.
+Models, schemas, API endpoints, and most Celery task wiring are complete. Pipeline spine (API dispatches Celery, Celery calls internal API on completion, auto-advance to next phase) is wired. Worker harness has worktree creation, account rotation, decision file detection. Remaining gaps: Slack notifications, Redis progress polling, and /pylon skill phase prompt files. See `status/PROGRESS.md` for details and `status/backlog/critical-path.md` for remaining items.
 
 ## Testing
 
