@@ -95,7 +95,7 @@ starts, completions, and failures in reverse chronological order.
 ```
 
 ## Dependencies
-blocked_by: wo-001
+blocked_by: none (wo-001 completed 2026-05-02)
 blocks: none
 
 ## After commit

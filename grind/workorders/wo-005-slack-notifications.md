@@ -4,7 +4,7 @@
 Slack notifications on decisions-emitted, phase-failed, pipeline-completed. Small.
 
 ## Files to read
-- src/pylon/api/internal.py (lines 74-124: decisions_emitted, lines 127-170: phase_completed, lines 173-221: phase_failed)
+- src/pylon/api/internal.py (lines 75-124: decisions_emitted, lines 128-170: phase_completed, lines 174-221: phase_failed)
 - src/pylon/config.py (line 14: slack_webhook_url)
 - src/pylon/tasks/pipeline.py (lines 225-241: existing _notify_batch_complete pattern)
 

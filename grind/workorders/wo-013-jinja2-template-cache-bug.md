@@ -57,8 +57,8 @@ curl -s http://localhost:8001/partials/board | grep -q "flex-shrink" && echo "OK
 ## Context Snapshot
 
 ```python
-# src/pylon/main.py:14-15 (approx)
-templates = Jinja2Templates(directory="src/pylon/templates")
+# src/pylon/main.py:20
+templates = Jinja2Templates(directory=str(templates_dir))
 ```
 
 Versions in container: Jinja2 3.1.6, Starlette 1.0.0, FastAPI (whatever pulls Starlette 1.0).
