@@ -27,7 +27,7 @@ Done:
 
 Not wired:
 - [x] Asana custom field sync (pylon_status, pylon_pr) on phase transitions
-- [ ] Notification sends (Slack) on decisions-emitted, phase-failed
+- [x] Notification sends (Slack) on decisions-emitted, phase-failed, pipeline-completed
 - [ ] Progress updates stored in Redis for fast polling
 
 ### SQLAlchemy models (100%)

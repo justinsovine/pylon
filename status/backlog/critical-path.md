@@ -50,9 +50,9 @@ Skill files exist. Wiring gaps between skill contract and harness found during a
 
 ## Notifications
 
-- [ ] Slack webhook on decisions-emitted (dev needs to answer)
-- [ ] Slack webhook on phase-failed (something broke)
-- [ ] Slack webhook on pipeline completed (PR ready)
+- [x] Slack webhook on decisions-emitted (dev needs to answer)
+- [x] Slack webhook on phase-failed (something broke)
+- [x] Slack webhook on pipeline completed (PR ready)
 
 ## Dashboard: decision flow
 
