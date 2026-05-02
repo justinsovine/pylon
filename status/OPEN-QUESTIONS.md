@@ -79,14 +79,46 @@ Blocked by: P40 hardware purchase timeline.
 
 ## Prompt engineering for structured output
 
-**Question:** How exactly do the /pylon skill phase instructions tell Claude to emit structured JSON decision files instead of conversational text?
+**Status: Partially resolved.** Skill phase files written (2026-05-02). IPC contract defined in SKILL.md. Still needs manual testing with `claude -p` to validate Claude actually follows the contract reliably.
 
-This is the hardest unsolved problem. The skill markdown needs to instruct
-Claude to:
-- Analyze all decisions upfront (not one at a time)
-- Map dependencies between decisions
-- Write valid JSON to a specific file path
-- Exit cleanly after emitting decisions
+Remaining risks:
+- Claude may produce malformed JSON or write to wrong paths
+- Decision `depends_on` ordering may confuse the model
+- Long phases (implement, 45min) may lose context of the IPC contract after compaction
+- Need to test whether `--output-format text` interferes with file-writing tool calls
 
-No prototype exists yet. Needs experimentation.
-Blocked by: Need to write the /pylon skill phases and test them.
+Blocked by: Manual testing against real ticket.
+
+## Wiring gaps found during skill authoring (2026-05-02)
+
+Building the /pylon skill files exposed these mismatches between the skill contract and the harness code:
+
+### 1. ~~Ticket context never reaches the skill~~ RESOLVED
+
+Fixed 2026-05-02: `_run_phase` now calls `write_ticket_context(notes_path, ticket_data)` which writes `ticket.json` with title, description, assignee, repo, priority, asana_gid. `_get_pipeline_info` expanded to return full ticket fields.
+
+### 2. ~~`asana_gid` and `answers_file` never passed to `spawn_worker`~~ RESOLVED
+
+Fixed 2026-05-02: Chose option B. Removed `asana_gid` and `answers_file` params from `spawn_worker`. Dropped `--asana` and `--decisions` flags from prompt. Skill reads ticket context from `ticket.json` (fix #1) and finds answers by scanning `.pylon/decisions/round-*-answers.json`.
+
+### 3. ~~Decision options format mismatch~~ RESOLVED
+
+Fixed 2026-05-02: Standardized on structured format (`key/label/tradeoff`). Seed data updated to match `DecisionOption` schema. Dashboard renders structured format.
+
+### 4. `status.json` is write-only
+
+Skill writes `.pylon/status.json` for progress updates. Harness never reads it. The `/progress` internal endpoint exists but nothing calls it. The monitor loop only watches for decision files.
+
+**Fix options:**
+- A) Add status.json polling to `monitor_decisions`. Post to `/progress` endpoint. Store in Redis for dashboard polling.
+- B) Drop status.json from the skill contract. Progress is implicit from phase transitions.
+
+Leaning: Option A eventually, but not blocking. Dashboard can show phase-level status (from DB) without sub-phase granularity.
+
+### 5. ~~Branch naming: per-pipeline or per-phase?~~ RESOLVED
+
+Fixed 2026-05-02: Seed data branch_name changed from `pylon/{slug}/investigate` to `pylon/{slug}`. All phases commit to same branch. `_poll_asana` already used correct `pylon/{slug}` format.
+
+### 6. ~~`--output-format text` may suppress tool output~~ RESOLVED
+
+Tested 2026-05-02: `claude -p --output-format text` executes tool calls normally (Write tool creates files as expected). The flag only controls stdout format, not tool execution. No changes needed.

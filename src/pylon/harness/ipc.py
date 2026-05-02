@@ -12,6 +12,11 @@ def write_config(pylon_dir: Path, pipeline_id: str, phase: str):
     (pylon_dir / "config.json").write_text(json.dumps(config, indent=2))
 
 
+def write_ticket_context(notes_path: Path, ticket_data: dict):
+    notes_path.mkdir(parents=True, exist_ok=True)
+    (notes_path / "ticket.json").write_text(json.dumps(ticket_data, indent=2))
+
+
 def write_answers_file(pylon_dir: Path, round_number: int, answers: dict):
     decisions_dir = pylon_dir / "decisions"
     decisions_dir.mkdir(exist_ok=True)

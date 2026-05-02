@@ -1,6 +1,6 @@
 # Build Progress
 
-Last updated: 2026-05-01 (Database bootstrap: initial migration, entrypoint, seed data)
+Last updated: 2026-05-02 (Fixed 4 harness wiring gaps: ticket context, dead flags, decision format, branch naming)
 
 ## Commits
 

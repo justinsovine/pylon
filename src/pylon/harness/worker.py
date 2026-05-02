@@ -80,14 +80,8 @@ async def spawn_worker(
     notes_path: str,
     account: str | None = None,
     worktree_path: Path | None = None,
-    asana_gid: str | None = None,
-    answers_file: str | None = None,
 ) -> asyncio.subprocess.Process:
     prompt = f"/pylon {phase} --notes={notes_path}"
-    if asana_gid:
-        prompt += f" --asana={asana_gid}"
-    if answers_file:
-        prompt += f" --decisions={answers_file}"
 
     env = {
         **os.environ,

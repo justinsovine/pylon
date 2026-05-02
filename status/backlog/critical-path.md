@@ -35,12 +35,18 @@ This is the spine. Everything else hangs off it.
 
 ## /pylon skill phases
 
-- [ ] Write skill phase files for all 7 phases (~/.claude/skills/pylon/)
-- [ ] Structured JSON output contract: decisions emitted to .pylon/decisions/
+- [x] Write skill phase files for all 7 phases (~/.claude/skills/pylon/)
+- [x] Verify `--output-format text` does not suppress tool calls (blocks everything below)
+- [x] Fix harness wiring gaps (see OPEN-QUESTIONS.md "Wiring gaps" section):
+  - [x] Write ticket context to notes folder in `_run_phase`
+  - [x] Decide on `--asana`/`--decisions` flags vs file scanning (dropped flags)
+  - [x] Standardize decision options format to structured `key/label/tradeoff`
+  - [x] Fix branch naming (drop phase suffix from `pylon/{slug}`)
 - [ ] Test each phase manually with `claude -p` against a real onboard ticket
 - [ ] Validate round-trip: skill emits decisions -> harness reads them -> API stores them
 
-This is the hardest unsolved problem. No prototype exists.
+Skill files exist. Wiring gaps between skill contract and harness found during authoring.
+`--output-format text` confirmed safe (2026-05-02): tool calls execute normally, flag only affects stdout format.
 
 ## Notifications
 

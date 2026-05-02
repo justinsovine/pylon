@@ -57,7 +57,7 @@ async def seed(session: AsyncSession) -> None:
         ticket_id=TICKET_ID,
         status="waiting_on_decision",
         current_phase="investigate",
-        branch_name="pylon/fix-invoice-pdf-alignment/investigate",
+        branch_name="pylon/fix-invoice-pdf-alignment",
         started_at=NOW - timedelta(hours=1),
         created_at=NOW - timedelta(hours=1),
         updated_at=NOW - timedelta(minutes=10),
@@ -101,10 +101,10 @@ async def seed(session: AsyncSession) -> None:
         decision_key="scope",
         question="Should the fix also address the footer alignment issue found during investigation?",
         context="Footer has a similar 5px offset but was not mentioned in the ticket.",
-        options={
-            "fix_both": "Fix header and footer alignment together",
-            "header_only": "Fix header only, create separate ticket for footer",
-        },
+        options=[
+            {"key": "fix_both", "label": "Fix header and footer alignment together", "tradeoff": "Larger PR, but fixes both issues in one pass"},
+            {"key": "header_only", "label": "Fix header only, create separate ticket for footer", "tradeoff": "Smaller blast radius, easier to review"},
+        ],
         recommendation="header_only",
         recommendation_why="Smaller blast radius, easier to review.",
         created_at=NOW - timedelta(minutes=10),
@@ -116,10 +116,10 @@ async def seed(session: AsyncSession) -> None:
         decision_key="approach",
         question="Which PDF rendering approach should be used?",
         context="Current code uses inline styles. Could switch to CSS classes.",
-        options={
-            "inline": "Keep inline styles, fix the calculation",
-            "css_classes": "Refactor to CSS classes with proper page-break handling",
-        },
+        options=[
+            {"key": "inline", "label": "Keep inline styles, fix the calculation", "tradeoff": "Less risk, consistent with existing codebase style"},
+            {"key": "css_classes", "label": "Refactor to CSS classes with proper page-break handling", "tradeoff": "Cleaner long-term, but larger diff and more testing needed"},
+        ],
         recommendation="inline",
         recommendation_why="Less risk, consistent with existing codebase style.",
         depends_on="scope",

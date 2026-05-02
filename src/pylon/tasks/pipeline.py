@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from ..config import settings
 from ..database import async_session
-from ..harness.ipc import read_result, read_round_file, write_answers_file, write_config
+from ..harness.ipc import read_result, read_round_file, write_answers_file, write_config, write_ticket_context
 from ..harness.preinvestigate import run_pre_investigation
 from ..harness.worker import acquire_account, create_worktree, kill_worker, mark_worker_running, release_worker, run_worker_with_monitor, spawn_worker
 from ..models import Pipeline, Ticket
@@ -70,6 +70,9 @@ async def _run_phase(
     })
 
     info = await _get_pipeline_info(pipeline_id)
+    if info and info.get("ticket"):
+        write_ticket_context(notes_path, info["ticket"])
+
     repo_path = await _resolve_repo_path(pipeline_id)
     worktree_path = None
 
@@ -273,6 +276,14 @@ async def _get_pipeline_info(pipeline_id: str) -> dict | None:
             "repo": pipeline.ticket.repo,
             "branch_name": pipeline.branch_name,
             "slug": pipeline.ticket.slug,
+            "ticket": {
+                "title": pipeline.ticket.title,
+                "description": pipeline.ticket.description,
+                "assignee": pipeline.ticket.assignee,
+                "repo": pipeline.ticket.repo,
+                "priority": pipeline.ticket.priority,
+                "asana_gid": pipeline.ticket.asana_gid,
+            },
         }
 
 
