@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from ..config import settings
 from ..database import get_db
+from ..notifications import notify_decisions_pending, notify_phase_failed, notify_pipeline_completed
 from ..models import Decision, DecisionRound, PhaseRun, Pipeline
 from ..schemas import DecisionsEmitted, PhaseCompleted, PhaseFailed, PhaseStarted, ProgressUpdate
 from ..tasks.asana import sync_asana_fields
@@ -121,6 +122,15 @@ async def decisions_emitted(
 
     await _sync_asana_status(pipeline, "awaiting_decisions")
 
+    await notify_decisions_pending(
+        slug=pipeline.ticket.slug,
+        repo=pipeline.ticket.repo,
+        assignee=pipeline.ticket.assignee,
+        phase=body.phase,
+        round_number=body.round_number,
+        count=len(body.decisions),
+    )
+
     return {"round_id": str(round_.id), "decisions_count": len(body.decisions)}
 
 
@@ -166,6 +176,11 @@ async def phase_completed(
         pipeline.completed_at = datetime.utcnow()
         await db.commit()
         await _sync_asana_status(pipeline, "completed", pr_url=pipeline.pr_url)
+        await notify_pipeline_completed(
+            slug=pipeline.ticket.slug,
+            repo=pipeline.ticket.repo,
+            pr_url=pipeline.pr_url,
+        )
 
     return {"next_phase": pipeline.current_phase, "pipeline_status": pipeline.status}
 
@@ -217,6 +232,13 @@ async def phase_failed(
     await db.commit()
 
     await _sync_asana_status(pipeline, "failed")
+
+    await notify_phase_failed(
+        slug=pipeline.ticket.slug,
+        repo=pipeline.ticket.repo,
+        phase=body.phase,
+        error=body.error,
+    )
 
     return {"retry_safe": body.retry_safe}
 
