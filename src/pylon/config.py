@@ -8,11 +8,16 @@ class Settings(BaseSettings):
     asana_token: str = ""
     asana_project_gid: str = ""
     asana_ready_section_gid: str = ""
+    asana_status_field_gid: str = ""
+    asana_pr_field_gid: str = ""
 
     slack_webhook_url: str = ""
 
     pylon_internal_key: str = "change-me"
     pylon_secret_key: str = "change-me"
+
+    api_base_url: str = "http://localhost:8000"
+    max_phase_retries: int = 2
 
     repos_base_path: str = ""
     notes_base_path: str = ""

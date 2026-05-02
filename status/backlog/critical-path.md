@@ -5,19 +5,19 @@ Asana ticket in -> investigation -> refine decisions -> plan -> critique decisio
 
 ## Wiring: API -> Celery -> Worker
 
-- [ ] Pipeline create endpoint dispatches `run_phase("investigate")` via Celery
-- [ ] `run_phase` calls internal API on completion/failure/decisions-emitted
-- [ ] Phase-completed endpoint auto-dispatches next phase
-- [ ] Answer submission writes answer files and dispatches next worker
-- [ ] Phase-failed triggers retry (up to configured max)
+- [x] Pipeline create endpoint dispatches `run_phase("investigate")` via Celery
+- [x] `run_phase` calls internal API on completion/failure/decisions-emitted
+- [x] Phase-completed endpoint auto-dispatches next phase
+- [x] Answer submission writes answer files and dispatches next worker
+- [x] Phase-failed triggers retry (up to configured max)
 
 This is the spine. Everything else hangs off it.
 
 ## Wiring: Asana -> Tickets -> Pipelines
 
-- [ ] `poll_asana` task creates Ticket rows from Asana tasks in target section
-- [ ] `overnight_batch` reads unstarted tickets, creates pipelines, dispatches investigate
-- [ ] Asana custom fields updated on phase transitions (pylon_status, pylon_pr)
+- [x] `poll_asana` task creates Ticket rows from Asana tasks in target section
+- [x] `overnight_batch` reads unstarted tickets, creates pipelines, dispatches investigate
+- [x] Asana custom fields updated on phase transitions (pylon_status, pylon_pr)
 
 ## Worker harness gaps
 

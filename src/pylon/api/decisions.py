@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from ..database import get_db
 from ..models import Answer, Decision, DecisionRound, PhaseRun, Pipeline, Ticket
 from ..schemas import AnswerBatchSubmit, DecisionOut, DecisionRoundOut
+from ..tasks.pipeline import run_phase
 
 router = APIRouter()
 
@@ -83,9 +84,39 @@ async def submit_answers(
 
     await db.commit()
 
-    # TODO: if all answered, write answers file and trigger next worker invocation
+    if all_answered:
+        answered_round = (await db.execute(
+            select(DecisionRound)
+            .where(DecisionRound.id == round_id)
+            .options(
+                selectinload(DecisionRound.phase_run),
+                selectinload(DecisionRound.decisions).selectinload(Decision.answer),
+            )
+        )).scalar_one()
+
+        phase_run = answered_round.phase_run
+        round_answers = {
+            "round": answered_round.round_number,
+            "answers": [
+                {
+                    "decision_key": d.decision_key,
+                    "choice": d.answer.choice,
+                    "note": d.answer.note,
+                }
+                for d in answered_round.decisions
+                if d.answer
+            ],
+        }
+
+        pipeline = (await db.execute(
+            select(Pipeline).where(Pipeline.id == phase_run.pipeline_id)
+        )).scalar_one()
+        pipeline.status = phase_run.phase
+        await db.commit()
+
+        run_phase.delay(str(phase_run.pipeline_id), phase_run.phase, round_answers)
 
     return {
-        "round_status": round_.status,
+        "round_status": "answered" if all_answered else round_.status,
         "next_action": "resuming_phase" if all_answered else "partial_answers_saved",
     }

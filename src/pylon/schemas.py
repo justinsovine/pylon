@@ -111,7 +111,7 @@ class WorkerSessionOut(BaseModel):
 class PhaseStarted(BaseModel):
     pipeline_id: uuid.UUID
     phase: str
-    worker_id: uuid.UUID
+    worker_id: uuid.UUID | None = None
 
 
 class DecisionsEmitted(BaseModel):

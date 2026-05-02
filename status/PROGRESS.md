@@ -1,6 +1,6 @@
 # Build Progress
 
-Last updated: 2026-04-30
+Last updated: 2026-05-01 (Asana custom field sync on phase transitions)
 
 ## Commits
 
@@ -10,7 +10,7 @@ Last updated: 2026-04-30
 
 ## Layer status
 
-### FastAPI backend (~60%)
+### FastAPI backend (~80%)
 
 Done:
 - [x] App setup, template routing, static files
@@ -19,16 +19,16 @@ Done:
 - [x] Worker endpoints (list, get, kill)
 - [x] Internal IPC endpoints (phase-started, decisions-emitted, phase-completed, phase-failed, progress)
 - [x] Internal API key auth middleware
+- [x] Pipeline create dispatching investigate via Celery
+- [x] Pipeline retry dispatching current phase via Celery
+- [x] Answer submission writing answer files and triggering next worker
+- [x] Phase-completed auto-dispatching next phase
+- [x] Phase-failed auto-retry logic
 
 Not wired:
-- [ ] Pipeline create dispatching investigate via Celery
-- [ ] Pipeline retry dispatching current phase via Celery
-- [ ] Answer submission writing answer files and triggering next worker
-- [ ] Phase-completed auto-dispatching next phase
-- [ ] Phase-failed auto-retry logic
+- [x] Asana custom field sync (pylon_status, pylon_pr) on phase transitions
 - [ ] Notification sends (Slack) on decisions-emitted, phase-failed
 - [ ] Progress updates stored in Redis for fast polling
-- [ ] Slug generation from Asana title
 
 ### SQLAlchemy models (100%)
 
@@ -41,19 +41,19 @@ Not wired:
 - [x] All request/response types
 - [x] Internal IPC schemas
 
-### Celery tasks (~30%)
+### Celery tasks (~70%)
 
 Done:
 - [x] Celery app config with Redis broker
 - [x] Beat schedule (poll-asana, detect-stale-workers, overnight-batch)
 - [x] run_phase task structure with retry/timeout
 - [x] Asana client (get tasks, update, comment, move section)
+- [x] run_phase calling internal API on phase-started/completion/failure/decisions
+- [x] poll_asana creating Ticket + Pipeline rows, deduplicating by asana_gid, dispatching investigate
 
 Not wired:
-- [ ] run_phase calling internal API on completion/failure/decisions
-- [ ] overnight_batch polling Asana and creating pipelines
-- [ ] notify_batch_complete sending Slack messages
-- [ ] Asana poller creating tickets and pipelines in DB
+- [x] overnight_batch querying queued pipelines and dispatching via chord
+- [x] notify_batch_complete sending Slack webhook summary
 - [ ] Stale worker detection querying DB
 - [ ] Worktree cleanup for old pipelines
 

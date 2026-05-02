@@ -1,13 +1,32 @@
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..config import settings
 from ..database import get_db
 from ..models import Decision, DecisionRound, PhaseRun, Pipeline
 from ..schemas import DecisionsEmitted, PhaseCompleted, PhaseFailed, PhaseStarted, ProgressUpdate
+from ..tasks.asana import sync_asana_fields
+from ..tasks.pipeline import run_phase
+
+logger = logging.getLogger(__name__)
+
+
+async def _sync_asana_status(pipeline: Pipeline, status: str, pr_url: str | None = None):
+    if not pipeline.ticket or not pipeline.ticket.asana_gid:
+        return
+    try:
+        await sync_asana_fields(
+            pipeline.ticket.asana_gid,
+            status=status,
+            pr_url=pr_url,
+        )
+    except Exception:
+        logger.warning("Asana sync failed for pipeline %s", pipeline.id, exc_info=True)
 
 router = APIRouter()
 
@@ -24,7 +43,11 @@ async def phase_started(
     body: PhaseStarted,
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Pipeline).where(Pipeline.id == body.pipeline_id)
+    query = (
+        select(Pipeline)
+        .options(selectinload(Pipeline.ticket))
+        .where(Pipeline.id == body.pipeline_id)
+    )
     result = await db.execute(query)
     pipeline = result.scalar_one()
 
@@ -42,6 +65,9 @@ async def phase_started(
     )
     db.add(phase_run)
     await db.commit()
+
+    await _sync_asana_status(pipeline, body.phase)
+
     return {"phase_run_id": str(phase_run.id)}
 
 
@@ -82,14 +108,18 @@ async def decisions_emitted(
         )
         db.add(decision)
 
-    query = select(Pipeline).where(Pipeline.id == body.pipeline_id)
+    query = (
+        select(Pipeline)
+        .options(selectinload(Pipeline.ticket))
+        .where(Pipeline.id == body.pipeline_id)
+    )
     result = await db.execute(query)
     pipeline = result.scalar_one()
     pipeline.status = "awaiting_decisions"
 
     await db.commit()
 
-    # TODO: send notification to assigned dev
+    await _sync_asana_status(pipeline, "awaiting_decisions")
 
     return {"round_id": str(round_.id), "decisions_count": len(body.decisions)}
 
@@ -111,24 +141,32 @@ async def phase_completed(
         phase_run.status = "completed"
         phase_run.completed_at = datetime.utcnow()
 
-    query = select(Pipeline).where(Pipeline.id == body.pipeline_id)
+    query = (
+        select(Pipeline)
+        .options(selectinload(Pipeline.ticket))
+        .where(Pipeline.id == body.pipeline_id)
+    )
     result = await db.execute(query)
     pipeline = result.scalar_one()
 
-    if body.result.get("pr_url"):
-        pipeline.pr_url = body.result["pr_url"]
+    pr_url = body.result.get("pr_url")
+    if pr_url:
+        pipeline.pr_url = pr_url
 
     current_idx = PHASE_ORDER.index(body.phase) if body.phase in PHASE_ORDER else -1
     if current_idx < len(PHASE_ORDER) - 1:
         next_phase = PHASE_ORDER[current_idx + 1]
         pipeline.current_phase = next_phase
         pipeline.status = next_phase
-        # TODO: auto-dispatch next phase if non-decision phase
+        await db.commit()
+        await _sync_asana_status(pipeline, next_phase)
+        run_phase.delay(str(pipeline.id), next_phase)
     else:
         pipeline.status = "completed"
         pipeline.completed_at = datetime.utcnow()
+        await db.commit()
+        await _sync_asana_status(pipeline, "completed", pr_url=pipeline.pr_url)
 
-    await db.commit()
     return {"next_phase": pipeline.current_phase, "pipeline_status": pipeline.status}
 
 
@@ -150,15 +188,35 @@ async def phase_failed(
         phase_run.error_message = body.error
         phase_run.completed_at = datetime.utcnow()
 
-    query = select(Pipeline).where(Pipeline.id == body.pipeline_id)
+    await db.flush()
+
+    query = (
+        select(Pipeline)
+        .options(selectinload(Pipeline.ticket))
+        .where(Pipeline.id == body.pipeline_id)
+    )
     result = await db.execute(query)
     pipeline = result.scalar_one()
-    pipeline.status = "failed"
 
+    if body.retry_safe:
+        failed_count = (await db.execute(
+            select(func.count())
+            .select_from(PhaseRun)
+            .where(PhaseRun.pipeline_id == body.pipeline_id)
+            .where(PhaseRun.phase == body.phase)
+            .where(PhaseRun.status == "failed")
+        )).scalar()
+
+        if failed_count <= settings.max_phase_retries:
+            pipeline.status = body.phase
+            await db.commit()
+            run_phase.delay(str(body.pipeline_id), body.phase)
+            return {"retry_safe": True, "action": "retrying", "attempt": failed_count + 1}
+
+    pipeline.status = "failed"
     await db.commit()
 
-    # TODO: auto-retry if retry_safe and retries remaining
-    # TODO: notify assigned dev
+    await _sync_asana_status(pipeline, "failed")
 
     return {"retry_safe": body.retry_safe}
 

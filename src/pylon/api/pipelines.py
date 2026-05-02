@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from ..database import get_db
 from ..models import Pipeline, Ticket
 from ..schemas import PipelineCreate, PipelineOut
+from ..tasks.pipeline import run_phase
 
 router = APIRouter()
 
@@ -75,7 +76,7 @@ async def create_pipeline(
     await db.commit()
     await db.refresh(pipeline)
 
-    # TODO: dispatch investigate phase via Celery
+    run_phase.delay(str(pipeline.id), "investigate")
 
     return pipeline
 
@@ -109,6 +110,6 @@ async def retry_pipeline(
     pipeline.status = pipeline.current_phase or "queued"
     await db.commit()
 
-    # TODO: dispatch current phase via Celery
+    run_phase.delay(str(pipeline.id), pipeline.current_phase or "investigate")
 
     return {"status": "retrying", "phase": pipeline.current_phase}
