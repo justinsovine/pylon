@@ -111,11 +111,11 @@ Done:
 - [x] HTMX polling wired (board 10s, badge 30s)
 
 Not done:
-- [ ] Board partial rendering pipeline cards in columns
-- [ ] Decision card partial with radio buttons and submit
-- [ ] Ticket detail partial with phase progress and history
+- [x] Board partial rendering pipeline cards in columns
+- [x] Decision card partial with radio buttons and submit
+- [x] Ticket detail partial with phase progress and history
 - [ ] Activity feed partial
-- [ ] Badge partial showing pending decision count
+- [x] Badge partial showing pending decision count
 - [ ] SSE for real-time updates (upgrade from polling)
 
 ### Tests (~25%)
