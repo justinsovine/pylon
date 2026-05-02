@@ -1,6 +1,6 @@
 # Build Progress
 
-Last updated: 2026-05-01 (Worker monitoring + worktree cleanup in maintenance tasks)
+Last updated: 2026-05-01 (Database bootstrap: initial migration, entrypoint, seed data)
 
 ## Commits
 
@@ -135,15 +135,14 @@ Not done:
 - [ ] Browser harness tests
 - [ ] Integration test: full pipeline loop with mock Claude
 
-### Database (~10%)
+### Database (~100%)
 
 Done:
 - [x] Alembic configured for async
 - [x] Migration template
-
-Not done:
-- [ ] Generate and run initial migration
-- [ ] Seed data for development
+- [x] Initial migration (0001) with all 7 tables, indexes, constraints
+- [x] Docker entrypoint runs migrations on api startup (RUN_MIGRATIONS env flag)
+- [x] Seed data script with sample ticket, pipeline, decisions, worker session
 
 ### Docker (~90%)
 

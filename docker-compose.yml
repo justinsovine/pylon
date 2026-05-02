@@ -51,6 +51,8 @@ services:
       - worktrees:/app/worktrees
       - repos:/repos:ro
     env_file: .env
+    environment:
+      RUN_MIGRATIONS: "true"
     networks:
       - internal
       - edoc

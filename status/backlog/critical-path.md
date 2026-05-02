@@ -29,9 +29,9 @@ This is the spine. Everything else hangs off it.
 
 ## Database bootstrap
 
-- [ ] Generate initial Alembic migration from models
-- [ ] Run migration in Docker entrypoint
-- [ ] Seed data script for development (sample ticket, pipeline, decisions)
+- [x] Generate initial Alembic migration from models
+- [x] Run migration in Docker entrypoint
+- [x] Seed data script for development (sample ticket, pipeline, decisions)
 
 ## /pylon skill phases
 
