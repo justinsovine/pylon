@@ -1,0 +1,60 @@
+{% if not pipeline %}
+<p class="text-gray-500">No pipeline found for this ticket.</p>
+{% else %}
+<div class="space-y-6">
+    <div class="flex items-center gap-2">
+        <span class="text-xs font-medium px-2 py-0.5 rounded
+            {% if pipeline.status == 'completed' %}bg-green-900 text-green-300
+            {% elif pipeline.status == 'failed' %}bg-red-900 text-red-300
+            {% elif pipeline.status == 'awaiting_decisions' %}bg-amber-900 text-amber-300
+            {% elif pipeline.status == 'running' %}bg-blue-900 text-blue-300
+            {% else %}bg-gray-700 text-gray-300{% endif %}">
+            {{ pipeline.status }}
+        </span>
+        <span class="text-xs text-gray-500">{{ pipeline.ticket.repo }}</span>
+        {% if pipeline.pr_url %}
+        <a href="{{ pipeline.pr_url }}" target="_blank" class="text-xs text-blue-400 hover:underline">PR</a>
+        {% endif %}
+    </div>
+
+    <div class="flex items-center gap-1">
+        {% for phase in phases %}
+        {% set phase_run = namespace(found=none) %}
+        {% for pr in pipeline.phase_runs %}
+            {% if pr.phase == phase %}
+                {% set phase_run.found = pr %}
+            {% endif %}
+        {% endfor %}
+        <div class="flex flex-col items-center gap-1 flex-1">
+            <div class="w-3 h-3 rounded-full
+                {% if phase_run.found and phase_run.found.status == 'completed' %}bg-green-500
+                {% elif phase_run.found and phase_run.found.status == 'running' %}bg-blue-500 animate-pulse
+                {% elif phase_run.found and phase_run.found.status == 'failed' %}bg-red-500
+                {% elif phase_run.found and phase_run.found.status == 'awaiting_decisions' %}bg-amber-500
+                {% elif phase == pipeline.current_phase %}bg-gray-400
+                {% else %}bg-gray-700{% endif %}">
+            </div>
+            <span class="text-[10px] text-gray-500">{{ phase[:3] }}</span>
+        </div>
+        {% if not loop.last %}
+        <div class="w-4 h-px bg-gray-700 mb-4"></div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="text-sm text-gray-400 space-y-1">
+        <p><span class="text-gray-500">Assignee:</span> {{ pipeline.ticket.assignee or "unassigned" }}</p>
+        <p><span class="text-gray-500">Priority:</span> {{ pipeline.ticket.priority or "none" }}</p>
+        {% if pipeline.ticket.asana_url %}
+        <p><a href="{{ pipeline.ticket.asana_url }}" target="_blank" class="text-blue-400 hover:underline">Asana ticket</a></p>
+        {% endif %}
+    </div>
+
+    {% if pipeline.status == 'awaiting_decisions' %}
+    <div class="mt-4">
+        <a href="/tickets/{{ pipeline.ticket.slug }}/decisions"
+           class="text-sm text-amber-400 hover:underline">Review pending decisions</a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

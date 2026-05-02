@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -45,6 +45,42 @@ async def ticket_decisions(request: Request, slug: str):
 @app.get("/activity", response_class=HTMLResponse)
 async def activity(request: Request):
     return templates.TemplateResponse(request, "activity.html")
+
+
+PHASE_ORDER = ["investigate", "refine", "plan", "critique", "implement", "test", "pr"]
+
+
+@app.get("/partials/badge", response_class=HTMLResponse)
+async def badge_partial(request: Request, db: AsyncSession = Depends(get_db)):
+    count = (
+        await db.execute(
+            select(func.count()).select_from(DecisionRound).where(DecisionRound.status == "awaiting")
+        )
+    ).scalar()
+    return templates.TemplateResponse(request, "partials/badge.html", {"count": count})
+
+
+@app.get("/partials/ticket/{slug}", response_class=HTMLResponse)
+async def ticket_partial(request: Request, slug: str, db: AsyncSession = Depends(get_db)):
+    ticket = (
+        await db.execute(select(Ticket).where(Ticket.slug == slug))
+    ).scalar_one_or_none()
+    if not ticket:
+        return HTMLResponse("<p class='text-red-400'>Ticket not found.</p>")
+
+    pipeline = (
+        await db.execute(
+            select(Pipeline)
+            .where(Pipeline.ticket_id == ticket.id)
+            .options(selectinload(Pipeline.phase_runs))
+        )
+    ).scalar_one_or_none()
+
+    return templates.TemplateResponse(
+        request,
+        "partials/ticket.html",
+        {"ticket": ticket, "pipeline": pipeline, "phases": PHASE_ORDER},
+    )
 
 
 @app.get("/partials/decisions/{slug}", response_class=HTMLResponse)
