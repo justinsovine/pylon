@@ -1,0 +1,71 @@
+{% if not round %}
+<p class="text-gray-500">No pending decisions.</p>
+{% else %}
+<div class="text-sm text-gray-400 mb-4">
+    {{ phase|title }} — Round {{ round.round_number }} — {{ round.decisions|length }} decisions
+</div>
+<div x-data="{
+    answeredBy: 'justin',
+    submitting: false,
+    async submit() {
+        this.submitting = true;
+        const cards = document.querySelectorAll('[data-decision-id]');
+        const answers = [...cards].map(el => ({
+            decision_id: el.dataset.decisionId,
+            choice: el.querySelector('input[type=radio]:checked')?.value || '',
+            note: el.querySelector('textarea')?.value || null
+        }));
+        const resp = await fetch('/api/decisions/rounds/{{ round.id }}/answers', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ answered_by: this.answeredBy, answers })
+        });
+        if (resp.ok) {
+            document.getElementById('decisions-container').innerHTML =
+                '<p class=&quot;text-green-400&quot;>Answers submitted. Phase resuming.</p>';
+        } else {
+            this.submitting = false;
+            alert('Submit failed: ' + resp.status);
+        }
+    }
+}">
+    <label class="text-sm text-gray-400 mb-1 block">Answering as:</label>
+    <select x-model="answeredBy"
+            class="mb-6 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-200">
+        <option value="justin">justin</option>
+        <option value="tanya">tanya</option>
+        <option value="michael">michael</option>
+    </select>
+
+    {% for d in round.decisions %}
+    <div class="bg-gray-900 rounded-lg p-4 mb-4 border border-gray-700" data-decision-id="{{ d.id }}">
+        <h3 class="font-medium text-white mb-2">{{ loop.index }}. {{ d.question }}</h3>
+        {% if d.context %}
+        <p class="text-sm text-gray-400 mb-3">{{ d.context }}</p>
+        {% endif %}
+        {% for opt in d.options %}
+        <label class="flex items-start gap-3 p-2 rounded hover:bg-gray-800 cursor-pointer mb-1">
+            <input type="radio" name="choice-{{ d.id }}" value="{{ opt.key }}"
+                   class="mt-0.5" {% if opt.key == d.recommendation %}checked{% endif %}>
+            <div>
+                <span class="text-sm text-white">{{ opt.key }}: {{ opt.label }}</span>
+                {% if opt.key == d.recommendation %}
+                <span class="text-xs text-amber-400 ml-1">recommended</span>
+                {% endif %}
+                <div class="text-xs text-gray-500">{{ opt.tradeoff }}</div>
+            </div>
+        </label>
+        {% endfor %}
+        <textarea placeholder="Notes (optional)"
+                  class="mt-2 w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300 resize-none"
+                  rows="2"></textarea>
+    </div>
+    {% endfor %}
+
+    <button @click="submit()" :disabled="submitting"
+            class="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-4 py-2 rounded text-sm font-medium">
+        <span x-show="!submitting">Submit {{ round.decisions|length }} answers</span>
+        <span x-show="submitting" x-cloak>Submitting...</span>
+    </button>
+</div>
+{% endif %}

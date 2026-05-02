@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from .api import decisions, internal, pipelines, workers
 from .database import get_db
-from .models import Pipeline, Ticket
+from .models import Decision, DecisionRound, PhaseRun, Pipeline, Ticket
 
 app = FastAPI(title="Pylon", version="0.1.0")
 
@@ -44,6 +44,51 @@ async def ticket_decisions(request: Request, slug: str):
 @app.get("/activity", response_class=HTMLResponse)
 async def activity(request: Request):
     return templates.TemplateResponse("activity.html", {"request": request})
+
+
+@app.get("/partials/decisions/{slug}", response_class=HTMLResponse)
+async def decisions_partial(request: Request, slug: str, db: AsyncSession = Depends(get_db)):
+    ticket = (
+        await db.execute(select(Ticket).where(Ticket.slug == slug))
+    ).scalar_one_or_none()
+    if not ticket:
+        return HTMLResponse("<p class='text-gray-500'>No ticket found.</p>")
+
+    pipeline = (
+        await db.execute(
+            select(Pipeline)
+            .where(Pipeline.ticket_id == ticket.id)
+            .options(
+                selectinload(Pipeline.phase_runs)
+                .selectinload(PhaseRun.decision_rounds)
+                .selectinload(DecisionRound.decisions)
+                .selectinload(Decision.answer)
+            )
+        )
+    ).scalar_one_or_none()
+    if not pipeline:
+        return HTMLResponse("<p class='text-gray-500'>No pipeline found.</p>")
+
+    awaiting_round = None
+    phase = None
+    for pr in pipeline.phase_runs:
+        for dr in pr.decision_rounds:
+            if dr.status == "awaiting":
+                awaiting_round = dr
+                phase = pr.phase
+                break
+        if awaiting_round:
+            break
+
+    return templates.TemplateResponse(
+        "partials/decisions.html",
+        {
+            "request": request,
+            "pipeline": pipeline,
+            "round": awaiting_round,
+            "phase": phase,
+        },
+    )
 
 
 BOARD_COLUMNS = [
