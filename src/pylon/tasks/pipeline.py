@@ -14,7 +14,7 @@ from ..config import settings
 from ..database import async_session
 from ..harness.ipc import read_result, read_round_file, write_answers_file, write_config
 from ..harness.preinvestigate import run_pre_investigation
-from ..harness.worker import kill_worker, spawn_worker
+from ..harness.worker import acquire_account, create_worktree, kill_worker, mark_worker_running, release_worker, spawn_worker
 from ..models import Pipeline, Ticket
 from .celery_app import app
 
@@ -69,35 +69,59 @@ async def _run_phase(
         "worker_id": None,
     })
 
-    # Pre-investigation: run zero-token static analysis before Claude sees the code
-    if phase == "investigate":
-        repo_path = _resolve_repo_path(pipeline_id)
-        if repo_path:
-            keywords = _extract_keywords(notes_path)
-            await run_pre_investigation(
-                repo_path=repo_path,
-                notes_path=str(notes_path),
-                keywords=keywords,
-            )
+    info = await _get_pipeline_info(pipeline_id)
+    repo_path = await _resolve_repo_path(pipeline_id)
+    worktree_path = None
+
+    if repo_path and info and info.get("branch_name"):
+        worktree_path = await create_worktree(
+            repo_path=repo_path,
+            pipeline_id=pipeline_id,
+            branch_name=info["branch_name"],
+        )
+
+    if phase == "investigate" and repo_path:
+        keywords = _extract_keywords(notes_path)
+        await run_pre_investigation(
+            repo_path=repo_path,
+            notes_path=str(notes_path),
+            keywords=keywords,
+        )
 
     if round_answers:
         round_num = round_answers.get("round", 1)
         write_answers_file(pylon_dir, round_num, round_answers)
 
+    worker_session = await acquire_account(pipeline_id, phase, timeout)
+    if not worker_session:
+        logger.warning("No available account for pipeline %s, retrying", pipeline_id)
+        raise run_phase.retry(countdown=60, max_retries=5)
+
+    account = worker_session.account
+    session_id = worker_session.id
+
     proc = await spawn_worker(
         pipeline_id=pipeline_id,
         phase=phase,
         notes_path=str(notes_path),
+        account=account,
+        worktree_path=worktree_path,
     )
+
+    await mark_worker_running(session_id, proc.pid)
 
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
         await kill_worker(proc)
+        await release_worker(session_id, exit_code=-1, error="timed out")
         return {"status": "timed_out", "phase": phase}
 
+    error_output = stderr.decode() if stderr else None
+    await release_worker(session_id, exit_code=proc.returncode, error=error_output)
+
     if proc.returncode != 0:
-        error = stderr.decode() if stderr else "unknown error"
+        error = error_output or "unknown error"
         if "Rate limit" in error:
             raise run_phase.retry(countdown=120)
         await _notify_internal("phase-failed", {
@@ -207,11 +231,42 @@ async def _notify_batch_complete(results, pipeline_ids):
     return {"notified": True, "succeeded": succeeded, "awaiting": awaiting, "failed": failed}
 
 
-def _resolve_repo_path(pipeline_id: str) -> str | None:
-    """Look up the repo path for a pipeline. Returns None if not determinable."""
-    # TODO: query DB for pipeline -> ticket -> repo, resolve to filesystem path
-    # e.g. settings.repos_base_path / ticket.repo
-    return None
+async def _resolve_repo_path(pipeline_id: str) -> str | None:
+    async with async_session() as db:
+        result = await db.execute(
+            select(Pipeline)
+            .join(Ticket)
+            .where(Pipeline.id == pipeline_id)
+        )
+        pipeline = result.scalar_one_or_none()
+        if not pipeline:
+            return None
+
+    repo_key = pipeline.ticket.repo
+    repo_rel = settings.repo_paths.get(repo_key, repo_key)
+
+    if not settings.repos_base_path:
+        return None
+
+    repo_path = Path(settings.repos_base_path) / repo_rel
+    return str(repo_path) if repo_path.exists() else None
+
+
+async def _get_pipeline_info(pipeline_id: str) -> dict | None:
+    async with async_session() as db:
+        result = await db.execute(
+            select(Pipeline)
+            .join(Ticket)
+            .where(Pipeline.id == pipeline_id)
+        )
+        pipeline = result.scalar_one_or_none()
+        if not pipeline:
+            return None
+        return {
+            "repo": pipeline.ticket.repo,
+            "branch_name": pipeline.branch_name,
+            "slug": pipeline.ticket.slug,
+        }
 
 
 def _extract_keywords(notes_path: Path) -> list[str]:

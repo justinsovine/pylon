@@ -1,6 +1,6 @@
 # Build Progress
 
-Last updated: 2026-05-01 (Asana custom field sync on phase transitions)
+Last updated: 2026-05-01 (DB-backed account rotation in worker harness)
 
 ## Commits
 
@@ -66,9 +66,8 @@ Done:
 - [x] IPC file read/write (config, status, result, decisions, answers)
 
 Not wired:
-- [ ] Account rotation checking DB for active sessions
-- [ ] Worktree creation (git worktree add)
-- [ ] Branch creation (git checkout -b)
+- [x] Worktree creation (git worktree add) and branch creation
+- [x] Account rotation checking DB for active sessions
 - [ ] Worker monitoring loop (health checks every 30s)
 - [ ] Decision file detection triggering API call
 

@@ -41,6 +41,7 @@ class Settings(BaseSettings):
         "pr": 600,
     }
 
+    worker_accounts: list[str] = ["default", "worker-a", "worker-b"]
     max_workers: int = 3
     max_tickets_per_batch: int = 4
     asana_poll_interval_seconds: int = 900
