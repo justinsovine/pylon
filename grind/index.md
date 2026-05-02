@@ -13,7 +13,7 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 - D4: Integration test mock -- Option A, fake subprocess emitting IPC files
 
 ## In Progress
-- [wo-001](workorders/wo-001-board-partial.md) | blocked_by: none | est: medium
+<!-- next writes the current workorder here -->
 
 ## Up Next
 - [wo-002](workorders/wo-002-decision-partial.md) | blocked_by: wo-001 | est: medium
@@ -28,7 +28,7 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 - [wo-012](workorders/wo-012-skill-test-protocol.md) | blocked_by: none | est: small
 
 ## Done
-<!-- next moves completed items here with commit hash -->
+- [wo-001](workorders/done/wo-001-board-partial.md) | commit: 1f426a6 | completed: 2026-05-02
 
 ## Inbox
 <!-- next adds discoveries here for retune to process -->
