@@ -131,7 +131,7 @@ Done:
 Not done:
 - [x] Internal API tests
 - [ ] Celery task tests (mocked subprocess)
-- [ ] Worker harness tests
+- [x] Worker harness tests
 - [ ] Browser harness tests
 - [ ] Integration test: full pipeline loop with mock Claude
 
