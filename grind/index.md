@@ -16,13 +16,13 @@ Source: BUILDPLAN/ docs + status/backlog/critical-path.md + codebase investigati
 <!-- next writes the current workorder here -->
 
 ## Up Next
-- [wo-008](workorders/wo-008-internal-api-tests.md) | blocked_by: none | est: medium
 - [wo-009](workorders/wo-009-celery-task-tests.md) | blocked_by: none | est: medium
 - [wo-010](workorders/wo-010-harness-tests.md) | blocked_by: none | est: medium
 - [wo-011](workorders/wo-011-integration-test.md) | blocked_by: wo-008, wo-009, wo-010 | est: large
 - [wo-012](workorders/wo-012-skill-test-protocol.md) | blocked_by: none | est: small
 
 ## Done
+- [wo-008](workorders/done/wo-008-internal-api-tests.md) | commit: b204ead | completed: 2026-05-03
 - [wo-006](workorders/done/wo-006-redis-progress.md) | commit: 32c44d3 | completed: 2026-05-02
 - [wo-005](workorders/done/wo-005-slack-notifications.md) | commit: 5e3763d | completed: 2026-05-02
 - [wo-004](workorders/done/wo-004-activity-feed.md) | commit: 37e72a3 | completed: 2026-05-02

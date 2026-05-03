@@ -129,7 +129,7 @@ Done:
 - [x] Analyzer tests (tree-sitter classes/models, routes, pre-investigation)
 
 Not done:
-- [ ] Internal API tests
+- [x] Internal API tests
 - [ ] Celery task tests (mocked subprocess)
 - [ ] Worker harness tests
 - [ ] Browser harness tests
