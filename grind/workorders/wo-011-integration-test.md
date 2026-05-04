@@ -143,7 +143,7 @@ worker script emits IPC files instead of running Claude.
 ```
 
 ## Dependencies
-blocked_by: wo-008, wo-009, wo-010
+blocked_by: wo-014
 blocks: none
 
 ## After commit
