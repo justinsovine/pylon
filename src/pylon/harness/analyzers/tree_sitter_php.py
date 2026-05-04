@@ -27,7 +27,7 @@ class PhpModel:
 
 
 def get_parser() -> Parser:
-    language = Language(tsphp.language())
+    language = Language(tsphp.language_php())
     parser = Parser(language)
     return parser
 
