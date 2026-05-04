@@ -23,8 +23,8 @@ Afternoon    Devs review PRs, merge
 
 ```
 investigate → refine → plan → critique → implement → test → pr
-                ↑          ↑
-           human input  human input
+                ↑                ↑                    ↑
+           human input      human input          human input
 ```
 
 Phases without decision points run unattended. Phases with decision points park and wait for human answers via the dashboard.
